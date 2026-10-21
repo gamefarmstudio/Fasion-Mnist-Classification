@@ -134,7 +134,7 @@ if uploaded_file is not None and model is not None:
     img_tensor = preprocess_image(image)
 
     # 2. Execution inference tracking using PyTorch Inference Mode
-        with torch.inference_mode():
+    with torch.inference_mode():
         outputs = model(img_tensor)
         # เติม [0] ที่ท้ายบรรทัด เพื่อบดมิติจาก [[p0, p1, p2...]] ให้เหลือแค่ [p0, p1, p2...]
         probabilities = torch.softmax(outputs, dim=1)[0] 
