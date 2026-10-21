@@ -55,7 +55,6 @@ class DigitClassifier(pl.LightningModule):
 
 @st.cache_resource
 def load_trained_model_final():
-    # Hardcoded to your actual Google Colab path
     checkpoint_path = "epoch=175-step=32912.ckpt"
     try:
         model = DigitClassifier.load_from_checkpoint(
@@ -109,14 +108,20 @@ if uploaded_file is not None and model is not None:
     with col1:
         st.image(image, caption="📷 Uploaded Image", use_container_width=True)
 
+    # 1. Image transformed into tensor mapping configuration
     img_tensor = preprocess_image(image)
 
+    # 2. Execution inference tracking using PyTorch Inference Mode
     with torch.inference_mode():
-        outputs = model(input_tensor)
-        probabilities = torch.softmax(outputs, dim=1)
-        predicted_class = torch.argmax(probabilities, dim=1).item()
+        outputs = model(img_tensor)
+        probabilities = torch.softmax(outputs, dim=1)[0]  # Extracting 1D array probabilities from batch dimension
+        predicted_class = torch.argmax(probabilities).item()
+        
+        # Formulate metrics calculations
+        confidence = float(probabilities[predicted_class]) * 100
 
-    class_name = FASHION_CLASSES.get(pred_idx, "Unknown Category")
+    # 3. Output structural assignments
+    class_name = FASHION_CLASSES.get(predicted_class, "Unknown Category")
 
     with col2:
         st.subheader("📊 Classification Results:")
@@ -130,7 +135,7 @@ if uploaded_file is not None and model is not None:
 
     # Clean probability metric graph view with no tables attached
     st.write("🔍 **The Graph of Probabilities:**")
-    chart_data = {FASHION_CLASSES[i]: (float(probabilities[i]) * 100) for i in range(10)}
+    chart_data = {FASHION_CLASSES[i]: float(probabilities[i]) * 100 for i in range(10)}
     st.bar_chart(chart_data)
 
 # Footer Area Credits
