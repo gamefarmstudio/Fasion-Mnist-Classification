@@ -67,7 +67,7 @@ def load_trained_model_final():
         model.eval()
         return model
     except Exception as e:
-        st.error(f"Error loading model: {e}")
+        st.error(f"Error loading model: {e} Please report to the developer via github")
         return None
 
 def preprocess_image(image):
@@ -85,9 +85,9 @@ st.write("Upload an image of clothing, apparel, or footwear to let the AI classi
 
 model = load_trained_model_final()
 if model is not None:
-    st.success("🎉 Loaded model complete (Synced with high-precision pipeline)")
+    st.success("🎉 Loaded model complete")
 else:
-    st.warning("⚠️ Warning: The checkpoint is None. Please contact the developer.")
+    st.warning("⚠️ Warning: The checkpoint is None. Please contact the developer via github.")
 
 # User Guidelines Accordion
 with st.expander("💡 Tips for the Best Prediction Accuracy"):
@@ -111,12 +111,10 @@ if uploaded_file is not None and model is not None:
 
     img_tensor = preprocess_image(image)
 
-    with torch.no_grad():
-        output = model(img_tensor)
-        probabilities = torch.nn.functional.softmax(output, dim=1).squeeze(0)
-
-        pred_idx = output.argmax(dim=1).item()
-        confidence = probabilities[pred_idx].item() * 100
+    with torch.inference_mode():
+        outputs = model(input_tensor)
+        probabilities = torch.softmax(outputs, dim=1)
+        predicted_class = torch.argmax(probabilities, dim=1).item()
 
     class_name = FASHION_CLASSES.get(pred_idx, "Unknown Category")
 
