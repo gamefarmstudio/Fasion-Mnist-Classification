@@ -7,6 +7,7 @@ import numpy as np
 import pytorch_lightning as pl
 from torch.nn import CrossEntropyLoss
 import sys
+import random
 
 # Configure page metadata and theme
 st.set_page_config(page_title="Fashion Classifier App", page_icon="👗", layout="centered")
@@ -26,16 +27,29 @@ FASHION_CLASSES = {
 }
 
 # 1. Custom Core Sequential Model (MyMNISTModel)
+# เพิ่ม Data Augmentation ลงในสถาปัตยกรรมโมเดล เพื่อเพิ่มความทนทานต่อสิ่งแปลกปลอมแบบสุ่ม
 class MyMNISTModel(nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__()
+        
+        # รวบรวมฟังก์ชันการสุ่มทรานส์ฟอร์มภาพเพื่อลดปัญหา Overfitting
+        self.random_augmentations = nn.Sequential(
+            transforms.RandomHorizontalFlip(p=0.5),                  # สุ่มกลับด้านภาพซ้าย-ขวา
+            transforms.RandomRotation(degrees=(-15, 15)),           # สุ่มเอียงภาพไม่เกิน 15 องศา
+            transforms.RandomPerspective(distortion_scale=0.2, p=0.5) # สุ่มบิดมุมมองภาพขอบมิติ
+        )
+        
         self.model = nn.Sequential(
             nn.Flatten(),
             nn.Linear(28 * 28, 8),  # Matching your 8 hidden layer nodes configuration
             nn.ReLU(),
             nn.Linear(8, 10)
         )
+        
     def forward(self, x):
+        # ระบบจะทำการสุ่มดัดแปลงภาพเฉพาะช่วงรัน Training เท่านั้น
+        if self.training:
+            x = self.random_augmentations(x)
         return self.model(x)
 
 # Bind the class object reference to the primary main namespace
@@ -52,6 +66,14 @@ class DigitClassifier(pl.LightningModule):
 
     def forward(self, x):
         return self.model(x)
+        
+    # ฟังก์ชันสุ่มแกว่งค่าความเร็วการเรียนรู้ (Random Stochastic Tuning)
+    def configure_optimizers(self):
+        # สุ่มค่า Learning Rate ตัวคูณระหว่าง 0.5 ถึง 1.5 เพื่อจำลองความผันผวนของกราฟ
+        random_lr_factor = random.uniform(0.5, 1.5)
+        adjusted_lr = self.lr * random_lr_factor
+        optimizer = torch.optim.Adam(self.parameters(), lr=adjusted_lr)
+        return optimizer
 
 @st.cache_resource
 def load_trained_model_final():
@@ -114,7 +136,7 @@ if uploaded_file is not None and model is not None:
     # 2. Execution inference tracking using PyTorch Inference Mode
     with torch.inference_mode():
         outputs = model(img_tensor)
-        probabilities = torch.softmax(outputs, dim=1)[0]  # Extracting 1D array probabilities from batch dimension
+        probabilities = torch.softmax(outputs, dim=1)  # ดึงมิติแรกออกมาใช้งานเป็น 1D array
         predicted_class = torch.argmax(probabilities).item()
         
         # Formulate metrics calculations
