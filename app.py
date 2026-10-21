@@ -134,13 +134,16 @@ if uploaded_file is not None and model is not None:
     img_tensor = preprocess_image(image)
 
     # 2. Execution inference tracking using PyTorch Inference Mode
-    with torch.inference_mode():
+        with torch.inference_mode():
         outputs = model(img_tensor)
-        probabilities = torch.softmax(outputs, dim=1)  # ดึงมิติแรกออกมาใช้งานเป็น 1D array
+        # เติม [0] ที่ท้ายบรรทัด เพื่อบดมิติจาก [[p0, p1, p2...]] ให้เหลือแค่ [p0, p1, p2...]
+        probabilities = torch.softmax(outputs, dim=1)[0] 
+        
         predicted_class = torch.argmax(probabilities).item()
         
-        # Formulate metrics calculations
+        # คราวนี้จะดึงค่าความมั่นใจออกมาเป็นตัวเลขทศนิยมชั้นเดียวได้ฉลุยทันที
         confidence = float(probabilities[predicted_class]) * 100
+
 
     # 3. Output structural assignments
     class_name = FASHION_CLASSES.get(predicted_class, "Unknown Category")
