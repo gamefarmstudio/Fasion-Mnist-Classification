@@ -56,7 +56,7 @@ class DigitClassifier(pl.LightningModule):
 @st.cache_resource
 def load_trained_model_final():
     # Hardcoded to your actual Google Colab path
-    checkpoint_path = "/content/epoch=175-step=32912.ckpt"
+    checkpoint_path = "epoch=175-step=32912.ckpt"
     try:
         model = DigitClassifier.load_from_checkpoint(
             checkpoint_path,
