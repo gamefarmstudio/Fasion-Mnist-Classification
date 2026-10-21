@@ -3,7 +3,7 @@
 An end-to-end Machine Learning / Computer Vision project designed to classify articles of clothing into 10 distinct categories using the canonical **Fashion MNIST** benchmark dataset. The architecture is engineered for deployment as a public web service.
 
 ## Public Live Demo
- **https://enable-disobey-tapering.ngrok-free.dev/**
+ **https://fasion-mnist-classification.streamlit.app/**
 
 ---
 
